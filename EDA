@@ -1,0 +1,20 @@
+#Retrieve the cleaned dataset
+salary1_file=(r'C:\Users\abrah\Documents\Capstone project\finaldataset.csv')
+pd.read_csv(salary1_file)
+salary=pd.read_csv(salary1_file)
+
+#To examine the descriptive statistics of NBA salaries in the dataset
+salary.describe()
+
+#Descriptive statistic for "Salary" column
+salary['Salary'].describe()
+
+print(salary.shape)
+
+#Below are the full list of the column names
+print(salary.columns)
+
+# Histogram
+salary.hist()
+plt.show()
+
