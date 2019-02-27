@@ -1,0 +1,62 @@
+#Import packages
+import pandas as pd
+from pandas import DataFrame
+import numpy as np
+
+#Defining dataset
+salary_file=(r'C:\Users\abrah\Documents\Capstone project\nbaplayers1718.csv')
+pd.read_csv(salary_file)
+salary1=pd.read_csv(salary_file)
+salary2_file=(r'C:\Users\abrah\Documents\Capstone project\NBA_season1718_salary.csv')
+pd.read_csv(salary2_file)
+salary2=pd.read_csv(salary2_file)
+
+#Data Cleaning
+#Join Columns
+#Join the season stats dataset with the salary dataset
+columns2= ['Unnamed: 0', 'Tm']
+salary2.drop(columns2, axis=1, inplace=True)
+columns1= ['#', 'Season Start']
+salary1.drop(columns1, axis=1, inplace=True)
+salary= pd.merge(salary1, salary2, how='left', left_on='Player Name', right_on='Player')
+
+#Adding columns
+#Adding columns as traditional statistical attributes are measured in total numbers in the dataset, I am adding columns to divide those attributes by games played.
+salary['ORB/G'] = np.where(salary['G'] < 1, salary['G'], salary['ORB']/salary['G'])
+salary['DRB/G'] = np.where(salary['G'] < 1, salary['G'], salary['DRB']/salary['G'])
+salary['TRB/G'] = np.where(salary['G'] < 1, salary['G'], salary['TRB']/salary['G'])
+salary['AST/G'] = np.where(salary['G'] < 1, salary['G'], salary['AST']/salary['G'])
+salary['STL/G'] = np.where(salary['G'] < 1, salary['G'], salary['STL']/salary['G'])
+salary['BLK/G'] = np.where(salary['G'] < 1, salary['G'], salary['BLK']/salary['G'])
+salary['TOV/G'] = np.where(salary['G'] < 1, salary['G'], salary['TOV']/salary['G'])
+salary['PF/G'] = np.where(salary['G'] < 1, salary['G'], salary['PF']/salary['G'])
+salary['PTS/G'] = np.where(salary['G'] < 1, salary['G'], salary['PTS']/salary['G'])
+#Drop attributes that are not related to the performance of a player
+columns= ['Tm', ' Player Salary in $ ', 'blank2', 'blanl', 'ORB','DRB', 'TRB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PTS', 'Pos', 'Age', 'GS', 'MP', 'Player']
+salary.drop(columns, axis=1, inplace=True)
+
+#Check for null values
+copysalary=salary.copy()
+null_values_col = copysalary.isnull().sum()
+null_values_col = null_values_col[null_values_col != 0].sort_values(ascending = False).reset_index()
+null_values_col.columns = ["variable", "number of missing"]
+null_values_col.head()
+
+#Remove any players that have no salary for the 17/18 season
+salary.dropna(subset=['season17_18'] , inplace=True)
+#All the other null values will be replaced with 0
+salary.fillna(0, inplace=True)
+
+#Rename the column name showing the salaries of the players to ‘Salary’
+salary.rename(columns={'season17_18': 'Salary'}, inplace=True)
+
+#Remove any possible duplicates in the column with players names
+salary.drop_duplicates(subset='Player Name', keep= "first", inplace=True)
+
+#Check if there are any more null values
+copysalary=salary.copy()
+null_values_col = copysalary.isnull().sum()
+null_values_col = null_values_col[null_values_col != 0].sort_values(ascending = False).reset_index()
+null_values_col.columns = ["variable", "number of missing"]
+null_values_col.head()
+copysalary.isnull().any()
