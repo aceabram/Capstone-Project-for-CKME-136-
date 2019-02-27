@@ -60,3 +60,6 @@ null_values_col = null_values_col[null_values_col != 0].sort_values(ascending = 
 null_values_col.columns = ["variable", "number of missing"]
 null_values_col.head()
 copysalary.isnull().any()
+
+#Save the dataset as a .csv file
+salary.to_csv(r'C:\Users\abrah\Documents\Capstone project\finaldataset.csv')
