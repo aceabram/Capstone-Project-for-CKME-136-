@@ -1,0 +1,47 @@
+import pandas as pd
+import numpy as np
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import mean_squared_error
+import matplotlib.pyplot as plt
+
+salary1_file=(r'C:\Users\abrah\Documents\Capstone project\finaldataset.csv')
+pd.read_csv(salary1_file)
+salary=pd.read_csv(salary1_file)
+salary.drop(["Unnamed: 0"], axis = 1, inplace = True)
+
+#Nominal categories
+#0 - Journeymen players
+#1 - Role players
+#2 - Average players
+#3 - Star players
+#4 - Superstar players
+ 
+conditions1 = [(salary['Salary'] < 4000000), (salary['Salary'] <= 11000000), (salary['Salary'] <= 18000000), (salary['Salary'] <= 27000000)]
+choices = [0, 1, 2,3]
+salary['Nominal'] = np.select(conditions1, choices, default=4)
+#Show in Pie chart
+c = salary['Nominal'].map(lambda x: color_wheel.get(x))
+print(salary.Nominal.value_counts())
+p=salary.Nominal.value_counts().plot(kind="pie")
+plt.show()
+
+X_var = salary[['WS', 'PTS/G', 'DRB/G', 'BPM']]
+y_var = salary[['Nominal']]
+
+def model_fit(model, X_train, X_test, y_train, y_test):
+       model.fit(X_train, np.ravel(y_train,order='C'))
+       train_acc = round(model.score(X_train, y_train) * 100, 5)
+       test_acc = round(model.score(X_test, y_test) * 100, 5)
+       y_test_pred = model.predict(X_test)
+       average_error = np.mean(abs(y_test - y_test_pred))
+    
+       data = {"y_test": y_test, "y_test_pred": y_test_pred}
+       predictions_salary = pd.DataFrame(columns = ["y_test", "y_test_pred"], data = data)        
+    
+       print('Train accuracy (R^2): ', train_acc, '\nTest accuracy (R^2): ', test_acc, '\nTest error (average error): ', average_error, '\n', predictions_salary)
+
+X_train, X_test, y_train, y_test = train_test_split(X_var, y_var, test_size = .2, random_state = 1)
+
+model_fit(KNeighborsClassifier(), X_train, X_test, np.ravel(y_train,order='C'), y_test)
