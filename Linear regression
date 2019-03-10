@@ -1,0 +1,394 @@
+import pandas as pd
+import numpy as np
+import pickle
+import patsy
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.linear_model import LinearRegression
+from sklearn import metrics
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold
+from sklearn import feature_selection as f_select
+import os.path
+import warnings
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_score
+from sklearn import linear_model
+import numpy as np
+import pandas as pd
+from scipy import stats, integrate
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.linear_model import Ridge
+from sklearn.linear_model import Lasso
+from sklearn.model_selection import KFold
+from sklearn.model_selection import GridSearchCV
+from sklearn.linear_model import Lasso
+
+DATA_DIR = os.path.join(r'C:\Users\abrah\Documents\Capstone project\finaldataset.csv')
+salary = pd.read_csv(os.path.join(DATA_DIR))
+salary.drop(['Unnamed: 0'], axis=1, inplace=True)
+
+#1st MODEL (Selected attributes are used)
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(salary.loc[:, salary.columns != 'Salary'], salary.Salary, test_size=0.2, random_state =1234)
+
+#train
+y= y_train
+X = X_train[['WS', 'PTS/G', 'DRB/G', 'BPM']]
+#test
+y_test = y_test
+X_test = X_test[['WS', 'PTS/G', 'DRB/G', 'BPM']]
+
+linreg = LinearRegression()
+linreg_scores = cross_val_score(linreg, X, y, cv=5)
+print(np.mean(linreg_scores))
+#0.565916437992046
+linreg.fit(X, y)
+linreg.score(X_test, y_test)
+#0.653852167186555
+linreg.score(X, y)
+0.5714139535770237
+
+#Ridge linear regression model
+
+#define perimeter values that should be searched
+alpha_range = [1e-4, 1e-3, 1.5e-3, 1e-2, 1.5e-2, 1e-1, 1, 5, 10, 50, 100, 1000, 10000, 100000]
+normalize_range = [True, False]
+print(alpha_range, normalize_range)
+
+#Create a parameter grid: map the parameter names to the values that should be searched
+param_grid = dict(alpha=alpha_range, normalize=normalize_range)
+print(param_grid)
+
+#instantiate the grid
+grid = GridSearchCV(Ridge(), param_grid, cv=5)
+grid.fit(X, y)
+
+#view best parameter
+print("Best parameters set found on development set:")
+print()
+print(grid.best_params_)
+print()
+print("Grid scores on development set:")
+print()
+means = grid.cv_results_['mean_test_score']
+stds = grid.cv_results_['std_test_score']
+
+# Run Ridge with optimized alpha and normalize parameters
+ridge = Ridge(alpha=0.01, normalize=True)
+#Fit Model
+ridge.fit(X, y)
+# Ridge(alpha=0.01, copy_X=True, fit_intercept=True, max_iter=None,
+   normalize=True, random_state=None, solver='auto', tol=0.001)
+
+# View coefficients and intercept
+print('Coefficients:',ridge.coef_)
+#Coefficients: [ 909432.19044149  466690.26904962  658854.16947558 -170513.50319082]
+print('Intercept:',ridge.intercept_)
+#Intercept: -1531459.8760397518
+
+#5 fold cross-validation r^2 mean score
+ridge_scores = cross_val_score(ridge, X, y, cv=5)
+print(np.mean(ridge_scores))
+# 0.5659210714294304
+
+#Lasso Linear regression model
+
+#Define the parameter values that should be searched
+alpha_range = [1e-4, 1e-3, 1.5e-3, 1e-2, 1.5e-2, 1e-1, 1, 5, 10, 50, 100, 1000, 10000, 100000]
+normalize_range = [True, False]
+print(alpha_range, normalize_range)
+
+# Create a parameter grid: map the parameter names to the values that should be searched
+param_grid = dict(alpha=alpha_range, normalize=normalize_range)
+print(param_grid)
+
+# Instantiate the grid
+grid = GridSearchCV(Lasso(), param_grid, cv=5)
+grid.fit(X, y)
+
+# View the best parameter
+print("Best parameters set found on development set:")
+print()
+print(grid.best_params_)
+#{'alpha': 0.0001, 'normalize': False}
+print()
+print("Grid scores on development set:")
+print()
+means = grid.cv_results_['mean_test_score']
+stds = grid.cv_results_['std_test_score']
+
+#Run Lasso with optimized alpha and normalize parameters
+lasso = Lasso(alpha=0.0001, normalize=False)
+#Fit model
+lasso.fit(X, y)
+
+#View coefficients and intercept
+print('Coefficients:',lasso.coef_)
+# Coefficients: [ 937976.83621566  469717.19110606  652785.88288945 -194932.8784901]
+print()
+print('Intercept:',lasso.intercept_)
+#Intercept: - -1651060.7662228597
+# 5 fold cross-validation r^2 mean score
+lasso_scores = cross_val_score(lasso, X, y, cv=5)
+print(np.mean(lasso_scores))
+# 0.5659164379919494
+
+#Elastic Net
+
+from sklearn.linear_model import ElasticNet
+
+# Define the parameter values that should be searched
+alpha_range = [1e-4, 1e-3, 1.5e-3, 1e-2, 1.5e-2, 1e-1, 1, 5, 10, 50, 100, 1000, 10000, 100000]
+normalize_range = [True, False]
+print(alpha_range, normalize_range)
+
+# Create a parameter grid: map the parameter names to the values that should be searched
+param_grid = dict(alpha=alpha_range, normalize=normalize_range)
+print(param_grid)
+# Instantiate the grid
+grid = GridSearchCV(ElasticNet(), param_grid, cv=5)
+grid.fit(X, y)# View the best parameter
+print("Best parameters set found on development set:")
+print()
+print(grid.best_params_)
+#{'alpha': 0.0001, 'normalize': False}
+print()
+print("Grid scores on development set:")
+print()
+means = grid.cv_results_['mean_test_score']
+stds = grid.cv_results_['std_test_score']
+
+eNet = ElasticNet(alpha=0.0001, normalize=False)
+eNet.fit(X, y)
+print('Coefficients:',eNet.coef_)
+# Coefficients: [ 937956.57941136  469721.40772432  652775.86505712 -194918.61560627]
+ print()
+print('Intercept:',eNet.intercept_)
+# Intercept: -1650996.0366513813
+eNet = cross_val_score(eNet, X, y, cv=5)
+print(np.mean(eNet))
+# 0.5659164306468412
+
+#Residuals
+y_pred = ridge.predict(X)
+residuals = y - y_pred
+plt.scatter(y_pred, residuals)
+plt.title("Predicted Salary Vs. Residuals")
+plt.xlabel("Predicted Salary")
+plt.ylabel("Residuals")
+plt.show()
+
+2ND MODEL (All performance measuring attributes are used)
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(salary.loc[:, salary.columns != 'Salary'], salary.Salary, test_size=0.2, random_state =1234)
+
+#train
+y= y_train
+X2 = X_train[['PER', 'TS%', '3PAr', 'FTr', 'ORB%', 'DRB%', 'TRB%', 'AST%', 'STL%', 'BLK%', 'TOV%', 'USG%', 'OWS', 'DWS', 'WS', 'WS/48', 'OBPM', 'DBPM', 'BPM', 'VORP', 'FG', 'FGA', 'FG%', '3P', '3PA', '3P%', '2P', '2PA', '2P%', 'eFG%', 'FT', 'FTA', 'FT%', 'ORB/G', 'DRB/G', 'TRB/G', 'AST/G', 'STL/G', 'BLK/G', 'TOV/G', 'PF/G', 'PTS/G']]
+#test
+y_test = y_test
+X_test2 = X_test[['PER', 'TS%', '3PAr', 'FTr', 'ORB%', 'DRB%', 'TRB%', 'AST%', 'STL%', 'BLK%', 'TOV%', 'USG%', 'OWS', 'DWS', 'WS', 'WS/48', 'OBPM', 'DBPM', 'BPM', 'VORP', 'FG', 'FGA', 'FG%', '3P', '3PA', '3P%', '2P', '2PA', '2P%', 'eFG%', 'FT', 'FTA', 'FT%', 'ORB/G', 'DRB/G', 'TRB/G', 'AST/G', 'STL/G', 'BLK/G', 'TOV/G', 'PF/G', 'PTS/G']]
+
+linreg2 = LinearRegression()
+linreg2_scores = cross_val_score(linreg2, X2, y, cv=5)
+print(np.mean(linreg2_scores))
+#0.5186134091700556
+
+linreg2.fit(X2, y)
+#LinearRegression(copy_X=True, fit_intercept=True, n_jobs=None,
+         normalize=False)
+linreg2.score(X_test2, y_test)
+#0.5925386300294941
+
+linreg2.score(X2, y)
+#0.6460020186057809
+
+#Ridge linear regression model
+
+#define perimeter values that should be searched
+alpha_range = [1e-4, 1e-3, 1.5e-3, 1e-2, 1.5e-2, 1e-1, 1, 5, 10, 50, 100, 1000, 10000, 100000]
+normalize_range = [True, False]
+print(alpha_range, normalize_range)
+
+#Create a parameter grid: map the parameter names to the values that should be searched
+param_grid = dict(alpha=alpha_range, normalize=normalize_range)
+print(param_grid)
+
+#instantiate the grid
+grid = GridSearchCV(Ridge(), param_grid, cv=5)
+grid.fit(X2, y)
+
+#view best parameter
+print("Best parameters set found on development set:")
+print()
+print(grid.best_params_)
+# {'alpha': 100, 'normalize': False}
+print()
+print("Grid scores on development set:")
+print()
+means = grid.cv_results_['mean_test_score']
+stds = grid.cv_results_['std_test_score']
+
+# Run Lasso with optimized alpha and normalize parameters
+ridge2 = Ridge(alpha=100, normalize=False)
+#Fit Model
+ridge2.fit(X2, y)
+#Ridge(alpha=1, copy_X=True, fit_intercept=True, max_iter=None,
+   normalize=False, random_state=None, solver='auto', tol=0.001)
+
+# View coefficients and intercept
+print('Coefficients:',ridge2.coef_)
+# Coefficients: [-104600.32274514  -17550.89376561  -51970.52953311  112435.03825339
+   74059.95514518  -26519.09775504   73060.82385273  -33113.24726978
+ -160581.80526508 -214583.90110782  -13490.32951517  -48042.18115611
+  325171.21240977  383742.73603428  647666.45749132   15605.7471369
+ -220242.09139706  132708.50545263  -31368.63682044  125838.45783666
+   19813.63533087   -4459.62914082    4521.10287957   95199.48960086
+  -37373.8930958  -174017.19411664  -75385.85427159   32914.26395079
+   14669.08506181   -8430.70577658  -73750.77458976   59412.5361318
+    2919.26778824 -145560.1481824   219500.75173526   73940.60355279
+  415551.32293722   -6864.4901181   -20625.57586911  141691.88980871
+ -443743.01151225  563667.91085593]
+print('Intercept:',ridge2.intercept_)
+#Intercept: 630904.109284278
+
+#5 fold cross-validation r^2 mean score
+ridge_scores2 = cross_val_score(ridge2, X2, y, cv=5)
+print(np.mean(ridge_scores2))
+# 0.5677346494322839
+
+#Lasso Linear regression model
+
+# Define the parameter values that should be searched
+alpha_range = [1e-4, 1e-3, 1.5e-3, 1e-2, 1.5e-2, 1e-1, 1, 5, 10, 50, 100, 1000, 10000, 100000]
+normalize_range = [True, False]
+print(alpha_range, normalize_range)
+
+# Create a parameter grid: map the parameter names to the values that should be searched
+param_grid = dict(alpha=alpha_range, normalize=normalize_range)
+print(param_grid)
+# Instantiate the grid
+grid = GridSearchCV(Lasso(), param_grid, cv=5)
+grid.fit(X2, y)
+# View the best parameter
+print("Best parameters set found on development set:")
+print()
+print(grid.best_params_)
+# {'alpha': 100000, 'normalize': False}
+print()
+print("Grid scores on development set:")
+print()
+means = grid.cv_results_['mean_test_score']
+stds = grid.cv_results_['std_test_score']
+
+# Run Lasso with optimized alpha and normalize parameters
+lasso2 = Lasso(alpha=100000, normalize=False)
+#Fit model
+lasso2.fit(X2, y)
+#View coefficients and intercept
+print('Coefficients:',lasso2.coef_)
+# Coefficients: [-192804.01752696      -0.              -0.               0.
+   28295.07643331       0.          138483.76043842  -18919.49012569
+      -0.          -59624.12635348    1878.63127311  -57460.77363699
+       0.           24135.99304237 1226629.46459101       0.
+ -166073.50759565       0.              -0.               0.
+  -20089.06556397    7615.85085697       0.          111876.39172373
+  -42371.77308174      -0.          -44344.63141103   24478.67533608
+       0.              -0.          -81028.51988432   62769.18565051
+       0.              -0.           91396.93957692       0.
+  370037.87391466      -0.              -0.               0.
+ -658300.7076623   699058.2721133 ]
+print('Intercept:',lasso2.intercept_)
+# Intercept: 387773.7607363099
+lasso_scores = cross_val_score(lasso2, X2, y, cv=5)
+print(np.mean(lasso_scores))
+# 0.5670851858337896
+
+#Elastic Net
+
+from sklearn.linear_model import ElasticNet
+# Define the parameter values that should be searched
+alpha_range = [1e-4, 1e-3, 1.5e-3, 1e-2, 1.5e-2, 1e-1, 1, 5, 10, 50, 100, 1000, 10000, 100000]
+normalize_range = [True, False]
+print(alpha_range, normalize_range)
+
+# Create a parameter grid: map the parameter names to the values that should be searched
+param_grid = dict(alpha=alpha_range, normalize=normalize_range)
+print(param_grid)
+# Instantiate the grid
+grid = GridSearchCV(Lasso(), param_grid, cv=5)
+grid.fit(X2, y)
+# View the best parameter
+print("Best parameters set found on development set:")
+print()
+print(grid.best_params_)
+#{'alpha': 100000, 'normalize': False}
+print()
+
+print("Grid scores on development set:")
+print()
+means = grid.cv_results_['mean_test_score']
+stds = grid.cv_results_['std_test_score']
+
+eNet2 = ElasticNet(alpha=100000, normalize=False)
+eNet2.fit(X2, y)
+ print('Coefficients:',eNet2.coef_)
+# Coefficients: [ 1.04480183e+02  0.00000000e+00 -6.31157929e-01  1.78356847e+00
+  4.14328749e+01  1.19033730e+02  8.16921737e+01  7.02320218e+01
+  1.98417985e+00  7.60968181e+00  1.01839789e+01  3.21704351e+01
+  6.45319340e+01  3.40479513e+01  9.91387739e+01  6.13358236e-01
+  5.10485914e+01  3.48388565e+01  8.72058979e+01  4.89877773e+01
+  3.00039007e+03  5.22200248e+03  6.16736369e-02  6.06510235e+02
+  1.13779614e+03 -4.89650118e-01  2.39303736e+03  4.08286560e+03
+  0.00000000e+00  0.00000000e+00  2.06091455e+03  3.03876858e+03
+ -0.00000000e+00  1.72954851e+01  5.85677422e+01  7.68632271e+01
+  3.37343898e+01  7.96719660e+00  6.42204401e+00  1.57861606e+01
+  1.03274756e+01  1.32296182e+02]
+ -1563694.06746859   544039.10732577]
+print('Intercept:',eNet2.intercept_)
+#Intercept: 1775563.1467458382
+eNet2 = cross_val_score(eNet2, X2, y, cv=5)
+print(np.mean(eNet2))
+0.4757759201964012
+
+Analysis of Ridge from 1st model
+#calculate rmse
+from sklearn.metrics import mean_squared_error
+from math import sqrt
+y_pred_test = ridge.predict(X_test)
+rms = sqrt(mean_squared_error(y_test, y_pred_test))
+rms**2
+# 19704008302817.94
+ridge_resid = (y_test**2) - (y_pred_test**2)
+plt.scatter((y_pred_test**2), ridge_resid)
+plt.title("Predicted Salary Vs. Residuals")
+plt.xlabel("Predicted Salary")
+plt.ylabel("Residuals")
+plt.show()
+
+ridge_resid = (y_test) - (y_pred_test)
+plt.scatter((y_pred_test), ridge_resid)
+plt.title("Residual Plot")
+plt.xlabel("Predicted Sqrt(Salaries)")
+plt.ylabel("Residuals")
+plt.axhline(0)
+plt.show()
+
+#Train data
+salary_train_pred = ridge.predict(X)
+z = sns.jointplot(y, salary_train_pred)
+z.set_axis_labels('sqrt(salary)', 'Predicted Sqrt(Salary)', fontsize=16)
+
+#Test data
+plt.scatter(y_test**2, y_pred_test**2)
+plt.title("Actual Salary Vs. Predicted Salary")
+plt.xlabel("Actual Salary")
+plt.ylabel("Predicted Salary")
+plt.show()
