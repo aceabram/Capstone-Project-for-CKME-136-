@@ -18,3 +18,34 @@ print(salary.columns)
 salary.hist()
 plt.show()
 
+salary['Salary'].hist()
+plt.show()
+
+#Pearson correlation
+
+corrmat = salary.corr(method='pearson', min_periods=1)
+r_square = corrmat ** 2
+k = 16
+cols = r_square.nlargest(k, 'Salary')['Salary'].index
+cm = salary[cols].corr()
+cm_square = cm ** 2
+f, ax = plt.subplots(figsize=(10, 10))
+sns.set(font_scale=1.25)
+hm = sns.heatmap(cm_square, cbar=False, annot=True, square=True, fmt='.2f', annot_kws={'size': 10}, yticklabels=cols.values, xticklabels=cols.values)
+plt.show()
+
+#Multicollinearity analysis
+attribute=salary[['WS', 'FG', 'PTS/G', 'FGA', 'FTA', 'OWS', '2P', 'FT', '2PA', 'DWS', 'VORP', 'DRB/G', 'TOV/G', 'TRB/G', 'BPM']]
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(attribute.values, i) for i in range(attribute.shape[1])]
+vif["attribute"] = attribute.columns
+vif.round(1)
+
+Multicollinearity analysis
+attribute2=salary[['WS', 'PTS/G', 'DRB/G', 'BPM']]
+vif = pd.DataFrame()
+vif["VIF Factor"] = [variance_inflation_factor(attribute2.values, i) for i in range(attribute2.shape[1])]
+vif["attribute"] = attribute2.columns
+vif.round(1)
+
+#The Attributes 'WS', 'PTS/G', 'DRB/G'and 'BPM' have VIF factors below 10
