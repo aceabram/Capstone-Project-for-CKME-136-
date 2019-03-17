@@ -495,3 +495,4 @@ plt.tight_layout()
 plt.show()
 
 #From the figure, it can be seen that the training score decreases before increasing as the training set size increases. While the cross validation score turns flat after initially increasing after the training set size increases
+
