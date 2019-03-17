@@ -63,3 +63,4 @@ copysalary.isnull().any()
 
 #Save the dataset as a .csv file
 salary.to_csv(r'C:\Users\abrah\Documents\Capstone project\finaldataset.csv')
+
