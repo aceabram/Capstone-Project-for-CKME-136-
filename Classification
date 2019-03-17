@@ -266,3 +266,232 @@ plt.show()
 
 #The validation accuracy decreases at a higher rate than the training accuracy as the variance smoothing increases and goes lower than the training accuracy
 
+gaussian = GaussianNB(priors=None, var_smoothing=0.1)
+nb_model = gaussian.fit(x_train, y_train.values.ravel())
+print(nb_model.score(x_test, y_test))
+#0.5662650602409639
+
+from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support
+y_predict = nb_model.predict(x_test)
+sl = confusion_matrix(y_test, y_predict)
+
+sl_df = pd.DataFrame(sl,
+       index = ['Journeymen players', 'Role players', 'Average players', 'Star players'],
+       columns = ['Journeymen players', 'Role players', 'Average players', 'Star players'])
+
+plt.figure(figsize=(5.5,4))
+sns.heatmap(sl_df, annot=True)
+plt.title('Naive Bayes \nAccuracy:{0:.3f}'.format(accuracy_score(y_test, y_predict)))
+plt.ylabel('True label') 
+plt.xlabel('Predicted label')
+plt.show()
+
+#Naive Bayes model has an accuracy of 0.566 as shown from the figure
+
+from sklearn.model_selection import learning_curve
+from sklearn.multiclass import OneVsRestClassifier
+train_sizes, train_scores, val_scores = learning_curve(OneVsRestClassifier(GaussianNB(priors=None, var_smoothing=0.1)),
+        x_model,
+        y_model,
+        cv=5,
+        scoring='accuracy',
+        train_sizes=np.linspace(0.1, 1.0, 5))
+
+train_mean = np.mean(train_scores, axis=1)
+train_std = np.std(train_scores, axis=1)
+val_mean = np.mean(val_scores, axis=1)
+val_std = np.std(val_scores, axis=1)
+
+plt.plot(train_sizes, train_mean, '--', color="#ff8040",  label="Training score")
+plt.plot(train_sizes, val_mean, color="#40bfff", label="Cross-validation score")
+plt.fill_between(train_sizes, train_mean - train_std, train_mean + train_std, color="#DDDDDD")
+plt.fill_between(train_sizes, val_mean - val_std, val_mean + val_std, color="#DDDDDD")
+
+plt.title("NB Learning Curve \n ")
+plt.xlabel("Training Set Size"), plt.ylabel("Accuracy Score"), plt.legend(loc="best")
+plt.tight_layout()
+plt.show()
+
+DECISION TREE
+from sklearn import tree
+from sklearn.tree import DecisionTreeClassifier
+decision_tree_model = DecisionTreeClassifier()
+decision_tree_model.fit(x_train, y_train)
+print(decision_tree_model.score(x_train,y_train))
+# 1.0
+print(decision_tree_model.score(x_val,y_val))
+# 0.6341463414634146
+
+plt.bar(range(len(x_train.columns.values)), decision_tree_model.feature_importances_)
+plt.xticks(range(len(x_train.columns.values)),x_train.columns.values, rotation= 45)
+plt.title('Feature Importance')
+plt.show()
+
+#From the bar chart, it can be seen that WS (Win Shares) is the most important feature followed by DRB/G (Defensive Rebounds per game), PTS/G (Points per game) and lastly, BPM (Box Plus/Minus) is the least important feature
+
+train_score = []
+val_score = []
+for depth in np.arange(1,20):
+    decision_tree = tree.DecisionTreeClassifier(max_depth = depth,min_samples_leaf = 5)
+    decision_tree.fit(x_train, y_train)
+    train_score.append(decision_tree.score(x_train, y_train))
+    val_score.append(decision_tree.score(x_val, y_val))
+
+plt.plot(np.arange(1,20),train_score)
+plt.plot(np.arange(1,20),val_score)
+plt.legend(['Training Accuracy','Validation Accuracy'])
+plt.title('Decision Tree Tuning')
+plt.xlabel('Depth')
+plt.ylabel('Accuracy')
+plt.show()
+
+#The training accuracy is consistently higher than the validation accuracy
+
+train_score = []
+val_score = []
+for leaf in np.arange(1,30):
+    decision_tree = tree.DecisionTreeClassifier(max_depth = 5, min_samples_leaf = leaf)
+    decision_tree.fit(x_train, y_train)
+    train_score.append(decision_tree.score(x_train, y_train))
+    val_score.append(decision_tree.score(x_val, y_val))
+
+plt.plot(np.arange(1,30),train_score)
+plt.plot(np.arange(1,30),val_score)
+plt.legend(['Training Accuracy','Validation Accuracy'])
+plt.title('Decision Tree Tuning')
+plt.xlabel('Minimum Samples Leaf')
+plt.ylabel('Accuracy')
+plt.show()
+
+#The training accuracy is consistently higher than the validation accuracy
+
+my_decision_tree_model = DecisionTreeClassifier(max_depth = 5, min_samples_leaf = 6)
+my_decision_tree_model.fit(x_train, y_train)
+print(my_decision_tree_model.score(x_train,y_train))
+#0.7235772357723578
+print(my_decision_tree_model.score(x_val,y_val))
+#0.6341463414634146
+print(my_decision_tree_model.score(x_test,y_test))
+#0.5301204819277109
+
+from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support
+y_predict = my_decision_tree_model.predict(x_test)
+sal = confusion_matrix(y_test, y_predict)
+sal_df = pd.DataFrame(sal,
+       index = ['Journeymen players', 'Role players', 'Average players', 'Star players'],
+       columns = ['Journeymen players', 'Role players', 'Average players', 'Star players'])
+
+y_predict = my_decision_tree_model.predict(x_test)
+sal = confusion_matrix(y_test, y_predict)
+plt.figure(figsize=(5.5,4))
+sns.heatmap(sal_df, annot=True)
+plt.title('Decision Tree \nAccuracy:{0:.3f}'.format(accuracy_score(y_test, y_predict)))
+plt.ylabel('True label')
+plt.xlabel('Predicted label')
+plt.show()
+
+#Decision Tree model has an accuracy of 0.530 as shown from the figure
+
+#Learning Curve
+train_sizes, train_scores, val_scores = learning_curve(OneVsRestClassifier(DecisionTreeClassifier(max_depth = 5, min_samples_leaf = 6)),
+        x_model,
+        y_model,
+         cv=5,
+        scoring='accuracy',
+        train_sizes=np.linspace(0.1, 1.0, 5))
+
+train_mean = np.mean(train_scores, axis=1)
+train_std = np.std(train_scores, axis=1)
+val_mean = np.mean(val_scores, axis=1)
+val_std = np.std(val_scores, axis=1)
+plt.plot(train_sizes, train_mean, '--', color="#ff8040",  label="Training score")
+plt.plot(train_sizes, val_mean, color="#40bfff", label="Cross-validation score")
+plt.fill_between(train_sizes, train_mean - train_std, train_mean + train_std, color="#DDDDDD")
+plt.fill_between(train_sizes, val_mean - val_std, val_mean + val_std, color="#DDDDDD")
+plt.title("Decision Tree Learning Curve \n ")
+plt.xlabel("Training Set Size"), plt.ylabel("Accuracy Score"), plt.legend(loc="best")
+plt.tight_layout()
+plt.show()
+
+#From the figure, it can be seen that the training score accuracy is consistently higher than the cross validation score as the training set size increases
+
+LOGISTIC REGRESSION
+
+from sklearn.linear_model import LogisticRegression
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+logistic_model = LogisticRegression()
+logistic_model.fit(x_train, y_train.values.ravel())
+print(logistic_model.score(x_train,y_train))
+#0.6422764227642277
+print(logistic_model.score(x_val,y_val))
+#0.524390243902439
+
+train_score = []
+val_score=[]
+for i in np.arange(1,80):
+    logistic_model = LogisticRegression(penalty = 'l2', C = i,random_state = 0)
+    logistic_model.fit(x_train,y_train.values.ravel())
+    train_score.append(logistic_model.score(x_train, y_train))
+    val_score.append(logistic_model.score(x_val,y_val))
+
+plt.plot(np.arange(1,80),train_score)
+plt.plot(np.arange(1,80),val_score)
+plt.legend(['Training Accuracy','Validation Accuracy'])
+plt.title('Logistic Regression Tuning')
+plt.xlabel('C')
+plt.ylabel('Accuracy')
+plt.show()
+
+#From the figure, it can be observed that the training accuracy and validation accuracy are relatively flat
+
+my_logistic_regression_model = LogisticRegression(penalty = 'l2', C = 50, random_state = 0)
+my_logistic_regression_model.fit(x_train, y_train)
+print(my_logistic_regression_model.score(x_train,y_train))
+#0.6422764227642277
+print(my_logistic_regression_model.score(x_val,y_val))
+#0.5121951219512195
+print(my_logistic_regression_model.score(x_test,y_test))
+#0.5301204819277109
+y_predict = my_logistic_regression_model.predict(x_test)
+sal = confusion_matrix(y_test, y_predict)
+sal_df = pd.DataFrame(sal,
+       index = ['Journeymen players', 'Role players', 'Average players', 'Star players'],
+       columns = ['Journeymen players', 'Role players', 'Average players', 'Star players'])
+
+plt.figure(figsize=(5.5,4))
+sns.heatmap(sal_df, annot=True)
+plt.title('Logistic Regression \nAccuracy:{0:.3f}'.format(accuracy_score(y_test, y_predict)))
+plt.ylabel('True label')
+plt.xlabel('Predicted label')
+plt.show()
+
+#Logistic Regression model has an accuracy of 0.530 as shown from the figure
+
+from sklearn.model_selection import learning_curve
+from sklearn.svm import SVC
+from sklearn.multiclass import OneVsRestClassifier
+train_sizes, train_scores, val_scores = learning_curve(OneVsRestClassifier(LogisticRegression(penalty = 'l2', C = 50, random_state = 0)),
+        x_model,
+        y_model,
+        cv=5,
+        scoring='accuracy',
+        train_sizes=np.linspace(0.1, 1.0, 5))
+
+train_mean = np.mean(train_scores, axis=1)
+train_std = np.std(train_scores, axis=1)
+val_mean = np.mean(val_scores, axis=1)
+val_std = np.std(val_scores, axis=1)
+
+plt.plot(train_sizes, train_mean, '--', color="#ff8040",  label="Training score")
+plt.plot(train_sizes, val_mean, color="#40bfff", label="Cross-validation score")
+plt.fill_between(train_sizes, train_mean - train_std, train_mean + train_std, color="#DDDDDD")
+plt.fill_between(train_sizes, val_mean - val_std, val_mean + val_std, color="#DDDDDD")
+
+plt.title("Logistic Regression Learning Curve \n ")
+plt.xlabel("Training Set Size"), plt.ylabel("Accuracy Score"), plt.legend(loc="best")
+plt.tight_layout()
+plt.show()
+
+#From the figure, it can be seen that the training score decreases before increasing as the training set size increases. While the cross validation score turns flat after initially increasing after the training set size increases
