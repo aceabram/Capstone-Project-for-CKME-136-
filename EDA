@@ -49,3 +49,4 @@ vif["attribute"] = attribute2.columns
 vif.round(1)
 
 #The Attributes 'WS', 'PTS/G', 'DRB/G'and 'BPM' have VIF factors below 10
+
