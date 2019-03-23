@@ -32,3 +32,225 @@ from sklearn.linear_model import Lasso
 DATA_DIR = os.path.join(r'C:\Users\abrah\Documents\Capstone project\finaldataset.csv')
 salary = pd.read_csv(os.path.join(DATA_DIR))
 salary.drop(['Unnamed: 0'], axis=1, inplace=True)
+
+#Creating a linear regression model with only one variable (WS is used as it has the highest correlation with salary)
+lr = smf.ols('Salary ~ WS', data=salary)
+fit1 = lr.fit()
+x = salary.WS
+y = salary.Salary
+
+fig, ax = plt.subplots()
+fit = np.polyfit(x, y, deg=1)
+ax.plot(salary.WS, fit[0] * x + fit[1], color='red')
+ax.scatter(x, y)
+ax.set(xlabel='Win Shares', ylabel='salary', title = 'Salary regressed on Win Shares')
+fig.show()
+
+#residuals
+y_pred = fit1.predict(salary.WS)
+residuals = salary.Salary - y_pred
+plt.scatter(y_pred, residuals)
+
+plt.title("Predicted Win Shares Vs. Residuals")
+plt.xlabel("Predicted Win Shares")
+plt.ylabel("Residuals")
+plt.show()
+
+#Based on the results, Heteroskedasticity is present in this model which is a problem as the model tries to predict higher values of salaries, the variance of error increases.
+
+#To attempt to address the problem of Heteroskedasticity, a square root variance-stabilizing transformation is used.
+
+salary['sqrtsalary'] = np.sqrt(salary.Salary)
+lr2 = smf.ols('sqrtsalary ~ WS', data=salary)
+fit2 = lr2.fit()
+x1 = salary.WS
+y1 = salary.sqrtsalary
+fig, ax = plt.subplots()
+fit = np.polyfit(x1, y1, deg=1)
+ax.plot(salary.WS, fit[0] * x1 + fit[1], color='red')
+ax.scatter(x1, y1)
+fig.show()
+ax.set(xlabel='Win Shares', ylabel='squareroot(salary)', title = 'Squaroot(salary) regressed on points per game')
+
+#residuals
+y_pred = fit2.predict(salary.WS)
+residuals = salary.sqrtsalary - y_pred
+plt.scatter(y_pred, residuals)
+plt.title("Predicted Squareroot(Salary) Vs. Residuals")
+plt.xlabel("Predicted Squareroot(Salary)")
+plt.ylabel("Residuals")
+plt.show()
+
+# Heteroskedasticity is still present but there is an improvement from the previous model
+
+#To attempt to address the problem of Heteroskedasticity, a log variance-stabilizing transformation is used 
+
+salary['logy'] = np.log(salary.Salary)
+lr3 = smf.ols('logy ~ WS', data=salary)
+fit3 = lr3.fit()
+
+x3 = salary.WS
+y3 = salary.logy
+
+fig, ax = plt.subplots()
+fit = np.polyfit(x3, y3, deg=1)
+ax.plot(salary.WS, fit[0] * x3 + fit[1], color='red')
+ax.scatter(x3, y3)
+ax.set(xlabel='Win Shares', ylabel='log(salary)', title = 'log(salary) regressed on points per game')
+plt.show()
+
+#residuals
+y_pred = fit3.predict(salary.WS)
+residuals = salary.logy - y_pred
+plt.scatter(y_pred, residuals)
+plt.title("Predicted Log(Salary) Vs. Residuals")
+plt.xlabel("Predicted Log(Salary)")
+plt.ylabel("Residuals")
+plt.show()
+
+#Based on the results, log variance-stabilizing transformation make the Heteroskedasticity problem worse so the square root transformation will be used instead
+
+#Linear Regression Model
+1st MODEL (Selected attributes are used)
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(salary.loc[:, salary.columns != 'sqrtsalary'], salary. sqrtsalary, test_size=0.2, random_state =1234)
+
+#train
+y= y_train
+X = X_train[['WS', 'PTS/G', 'DRB/G', 'BPM']]
+#test
+y_test = y_test
+X_test = X_test[['WS', 'PTS/G', 'DRB/G', 'BPM']]
+
+linreg = LinearRegression()
+linreg_scores = cross_val_score(linreg, X, y, cv=5)
+print(np.mean(linreg_scores))
+# 0.5404223821960331
+linreg.fit(X, y)
+linreg.score(X_test, y_test)
+# 0.6080563084366193
+linreg.score(X, y)
+#0.550669635529975
+
+#Ridge linear regression model
+
+#define perimeter values that should be searched
+alpha_range = [1e-4, 1e-3, 1.5e-3, 1e-2, 1.5e-2, 1e-1, 1, 5, 10, 50, 100, 1000, 10000, 100000]
+normalize_range = [True, False]
+print(alpha_range, normalize_range)
+
+#Create a parameter grid: map the parameter names to the values that should be searched
+param_grid = dict(alpha=alpha_range, normalize=normalize_range)
+print(param_grid)
+
+#instantiate the grid
+grid = GridSearchCV(Ridge(), param_grid, cv=5)
+grid.fit(X, y)
+
+#view best parameter
+print("Best parameters set found on development set:")
+print()
+print(grid.best_params_)
+#{'alpha': 50, 'normalize': False}
+print()
+print("Grid scores on development set:")
+print()
+means = grid.cv_results_['mean_test_score']
+stds = grid.cv_results_['std_test_score']
+
+# Run Ridge with optimized alpha and normalize parameters
+ridge = Ridge(alpha=50, normalize=False)
+#Fit Model
+ridge.fit(X, y)
+#Ridge(alpha=50, copy_X=True, fit_intercept=True, max_iter=None,
+   normalize=False, random_state=None, solver='auto', tol=0.001)
+
+print('Coefficients:',ridge.coef_)
+# Coefficients: [126.06886013  83.60382963 135.67172114 -23.29741386]
+print('Intercept:',ridge.intercept_)
+#Intercept: 854.5819264644454
+
+
+#5 fold cross-validation r^2 mean score
+ridge_scores = cross_val_score(ridge, X, y, cv=5)
+print(np.mean(ridge_scores))
+#0.5408231452117336
+
+#Lasso Linear regression model
+# Define the parameter values that should be searched
+alpha_range = [1e-4, 1e-3, 1.5e-3, 1e-2, 1.5e-2, 1e-1, 1, 5, 10, 50, 100, 1000, 10000, 100000]
+normalize_range = [True, False]
+print(alpha_range, normalize_range)
+
+# Create a parameter grid: map the parameter names to the values that should be searched
+param_grid = dict(alpha=alpha_range, normalize=normalize_range)
+print(param_grid)
+
+# Instantiate the grid
+grid = GridSearchCV(Lasso(), param_grid, cv=5)
+grid.fit(X, y)
+# View the best parameter
+print("Best parameters set found on development set:")
+print()
+print(grid.best_params_)
+# {'alpha': 5, 'normalize': False}
+print()
+print("Grid scores on development set:")
+print()
+means = grid.cv_results_['mean_test_score']
+stds = grid.cv_results_['std_test_score']
+
+# Run Lasso with optimized alpha and normalize parameters
+lasso = Lasso(alpha=5, normalize=False)
+#Fit model
+lasso.fit(X, y)
+
+#View coefficients and intercept
+print('Coefficients:',lasso.coef_)
+# Coefficients: [130.03559126  82.25365646 141.99699473 -26.61377985]
+print('Intercept:',lasso.intercept_)
+# Intercept: 833.353729602763
+
+# 5 fold cross-validation r^2 mean score
+lasso_scores = cross_val_score(lasso, X, y, cv=5)
+print(np.mean(lasso_scores))
+#0.5404307674917821
+
+#Elastic Net
+from sklearn.linear_model import ElasticNet
+# Define the parameter values that should be searched
+alpha_range = [1e-4, 1e-3, 1.5e-3, 1e-2, 1.5e-2, 1e-1, 1, 5, 10, 50, 100, 1000, 10000, 100000]
+normalize_range = [True, False]
+print(alpha_range, normalize_range)
+
+# Create a parameter grid: map the parameter names to the values that should be searched
+param_grid = dict(alpha=alpha_range, normalize=normalize_range)
+print(param_grid)
+# Instantiate the grid
+grid = GridSearchCV(ElasticNet(), param_grid, cv=5)
+grid.fit(X, y)
+# View the best parameter
+print("Best parameters set found on development set:")
+print()
+print(grid.best_params_)
+#{'alpha': 0.0001, 'normalize': True}
+print()
+print("Grid scores on development set:")
+print()
+means = grid.cv_results_['mean_test_score']
+stds = grid.cv_results_['std_test_score']
+
+eNet = ElasticNet(alpha=0.0001, normalize=True)
+eNet.fit(X, y)
+
+print('Coefficients:',eNet.coef_)
+#Coefficients: [127.53380552  80.63192365 143.92550648 -23.5581577 ]
+print()
+print('Intercept:',eNet.intercept_)
+# Intercept: 853.3074911600143
+
+eNet = cross_val_score(eNet, X, y, cv=5)
+print(np.mean(eNet))
+#0.5406374293225135
+
