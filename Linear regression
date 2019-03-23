@@ -254,3 +254,49 @@ eNet = cross_val_score(eNet, X, y, cv=5)
 print(np.mean(eNet))
 #0.5406374293225135
 
+#All three models perform similarly with a score of around 0.54 with Ridge model slightly performing better than others at 0.5408
+
+#Residuals
+y_pred = ridge.predict(X)
+residuals = y - y_pred
+plt.scatter(y_pred, residuals)
+plt.title("Predicted Salary Vs. Residuals")
+plt.xlabel("Predicted Salary")
+plt.ylabel("Residuals")
+plt.show()
+
+#Analysis of Ridge from 1st model
+#calculate rmse
+from sklearn.metrics import mean_squared_error
+from math import sqrt
+y_pred_test = ridge.predict(X_test)
+rms = sqrt(mean_squared_error(y_test, y_pred_test))
+rms**2
+# 718445.5503618782
+
+ridge_resid = (y_test**2) - (y_pred_test**2)
+plt.scatter((y_pred_test**2), ridge_resid)
+plt.title("Predicted Salary Vs. Residuals")
+plt.xlabel("Predicted Salary")
+plt.ylabel("Residuals")
+plt.show()
+
+ridge_resid = (y_test) - (y_pred_test)
+plt.scatter((y_pred_test), ridge_resid)
+plt.title("Residual Plot")
+plt.xlabel("Predicted Sqrt(Salaries)")
+plt.ylabel("Residuals")
+plt.axhline(0)
+plt.show()
+
+#Train data
+salary_train_pred = ridge.predict(X)
+z = sns.jointplot(y, salary_train_pred)
+z.set_axis_labels('sqrt(salary)', 'Predicted Sqrt(Salary)', fontsize=16)
+
+#Test data
+plt.scatter(y_test**2, y_pred_test**2)
+plt.title("Actual Salary Vs. Predicted Salary")
+plt.xlabel("Actual Salary")
+plt.ylabel("Predicted Salary")
+plt.show()
